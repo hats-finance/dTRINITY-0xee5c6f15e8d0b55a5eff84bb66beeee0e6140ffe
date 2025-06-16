@@ -1526,6 +1526,12 @@ abstract contract DLoopCoreBase is
 
         // Transfer the debt token to the user
         debtToken.safeTransfer(msg.sender, borrowedDebtTokenAmount);
+
+        // Make sure the current leverage is below the target leverage after increasing the leverage
+        currentLeverageBps = getCurrentLeverageBps();
+        if (currentLeverageBps >= targetLeverageBps) {
+            revert LeverageExceedsTarget(currentLeverageBps, targetLeverageBps);
+        }
     }
 
     /**
