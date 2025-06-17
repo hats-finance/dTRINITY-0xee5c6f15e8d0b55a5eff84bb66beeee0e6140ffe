@@ -11,6 +11,8 @@ import {IDStakeRouter} from "./interfaces/IDStakeRouter.sol";
 import {BasisPointConstants} from "../../common/BasisPointConstants.sol";
 import {SupportsWithdrawalFee} from "../../common/SupportsWithdrawalFee.sol";
 
+//@audit-info _withdraw() allowance fix applied (L200-L202)
+
 /**
  * @title DStakeToken
  * @dev ERC4626-compliant token representing shares in the DStakeCollateralVault.
@@ -194,6 +196,9 @@ contract DStakeToken is
             address(collateralVault) == address(0)
         ) {
             revert ZeroAddress(); // Router or Vault not set
+        }
+        if(caller != owner){
+            _spendAllowance(owner, caller, shares);
         }
 
         uint256 fee = _calculateWithdrawalFee(assets); // Calculate fee on GROSS amount
