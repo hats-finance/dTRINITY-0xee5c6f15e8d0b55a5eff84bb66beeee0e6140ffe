@@ -17,6 +17,8 @@ import { ERC20StablecoinUpgradeable } from "../../typechain-types/contracts/dsta
 import { WrappedDLendConversionAdapter__factory } from "../../typechain-types/factories/contracts/vaults/dstake/adapters/WrappedDLendConversionAdapter__factory";
 import { WrappedDLendConversionAdapter } from "../../typechain-types/contracts/vaults/dstake/adapters/WrappedDLendConversionAdapter";
 
+//@audit-info _withdraw() allowance vulnerability test added L476-L494(name: "Withdraw and redeem should revert when msg.sender does not have an allowance and is not owner")
+
 const parseUnits = (value: string | number, decimals: number | bigint) =>
   ethers.parseUnits(value.toString(), decimals);
 
@@ -26,6 +28,7 @@ DSTAKE_CONFIGS.forEach((config: DStakeFixtureConfig) => {
     const fixture = createDStakeFixture(config);
     let deployer: SignerWithAddress;
     let user1: SignerWithAddress;
+    let user2: SignerWithAddress;
     let DStakeToken: DStakeToken;
     let collateralVault: DStakeCollateralVault;
     let router: DStakeRouterDLend;
@@ -44,6 +47,7 @@ DSTAKE_CONFIGS.forEach((config: DStakeFixtureConfig) => {
       const named = await getNamedAccounts();
       deployer = await ethers.getSigner(named.deployer);
       user1 = await ethers.getSigner(named.user1 || named.deployer);
+      user2 = await ethers.getSigner(named.user2 || named.deployer);
 
       // Revert to snapshot instead of re-deploying
       const out = await fixture();
@@ -467,6 +471,26 @@ DSTAKE_CONFIGS.forEach((config: DStakeFixtureConfig) => {
           assetsToDeposit,
           user1.address
         );
+      });
+
+      it("Withdraw and redeem should revert when msg.sender does not have an allowance and is not owner", async () => {
+        // user1 has already deposited assets inside beforeEach hook
+        
+        // user2 tries to steal user1's assets by withdrawing
+        await expect(
+          DStakeToken.connect(user2).withdraw(
+            assetsToDeposit,
+            user2.address,
+            user1.address)
+        ).to.be.reverted;// call reverts with ERC20InsufficientAllowance
+
+        // user2 tries to steal user1's shares by redeeming
+        await expect(
+          DStakeToken.connect(user2).redeem(
+            shares,
+            user2.address,
+            user1.address)
+        ).to.be.reverted;// call reverts with ERC20InsufficientAllowance
       });
 
       it("previewWithdraw returns expected shares", async () => {
