@@ -155,7 +155,7 @@ contract DStakeRouterDLend is IDStakeRouter, AccessControl {
         );
 
         // Approve adapter to spend dStable
-        IERC20(dStable).approve(adapterAddress, dStableAmount);
+        IERC20(dStable).forceApprove(adapterAddress, dStableAmount);
 
         // Convert dStable to vault asset (minted directly to collateral vault)
         (
@@ -210,7 +210,7 @@ contract DStakeRouterDLend is IDStakeRouter, AccessControl {
         collateralVault.sendAsset(vaultAsset, vaultAssetAmount, address(this));
 
         // 3. Approve adapter (set required allowance using standard approve)
-        IERC20(vaultAsset).approve(adapterAddress, vaultAssetAmount);
+        IERC20(vaultAsset).forceApprove(adapterAddress, vaultAssetAmount);
 
         // 4. Call adapter to convert and send dStable to receiver
         // Temporarily transfer to this contract, then forward to receiver if needed
@@ -236,7 +236,7 @@ contract DStakeRouterDLend is IDStakeRouter, AccessControl {
         uint256 surplus = receivedDStable - dStableAmount;
         if (surplus > 0) {
             // Give the adapter allowance to pull the surplus
-            IERC20(dStable).approve(adapterAddress, surplus);
+            IERC20(dStable).forceApprove(adapterAddress, surplus);
 
             // Convert surplus dStable → vault asset (minted directly to the vault)
             (address mintedAsset, ) = adapter.convertToVaultAsset(surplus);
@@ -304,7 +304,7 @@ contract DStakeRouterDLend is IDStakeRouter, AccessControl {
         );
 
         // 3. Approve fromAdapter & Convert fromVaultAsset -> dStable (sent to this router)
-        IERC20(fromVaultAsset).approve(
+        IERC20(fromVaultAsset).forceApprove(
             fromAdapterAddress,
             fromVaultAssetAmount
         );
@@ -313,7 +313,7 @@ contract DStakeRouterDLend is IDStakeRouter, AccessControl {
         );
 
         // 4. Approve toAdapter & Convert dStable -> toVaultAsset (sent to collateralVault)
-        IERC20(dStable).approve(toAdapterAddress, receivedDStable);
+        IERC20(dStable).forceApprove(toAdapterAddress, receivedDStable);
         (
             address actualToVaultAsset,
             uint256 resultingToVaultAssetAmount

@@ -5,6 +5,7 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {ERC4626Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC4626Upgradeable.sol";
 import {ERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IDStakeCollateralVault} from "./interfaces/IDStakeCollateralVault.sol";
 import {IDStakeRouter} from "./interfaces/IDStakeRouter.sol";
@@ -21,6 +22,8 @@ contract DStakeToken is
     AccessControlUpgradeable,
     SupportsWithdrawalFee
 {
+    using SafeERC20 for IERC20;
+
     // --- Roles ---
     bytes32 public constant FEE_MANAGER_ROLE = keccak256("FEE_MANAGER_ROLE");
 
@@ -124,7 +127,7 @@ contract DStakeToken is
         super._deposit(caller, receiver, assets, shares); // This handles the ERC20 transfer
 
         // Approve router to spend the received assets (necessary because super._deposit transfers to this contract)
-        IERC20(asset()).approve(address(router), assets);
+        IERC20(asset()).forceApprove(address(router), assets);
 
         // Delegate conversion and vault update logic to router
         router.deposit(assets, receiver);

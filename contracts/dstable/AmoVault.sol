@@ -76,7 +76,7 @@ abstract contract AmoVault is CollateralVault, IRecoverable, ReentrancyGuard {
      * @dev Only callable by the contract owner or an account with the DEFAULT_ADMIN_ROLE
      */
     function approveAmoManager() public onlyRole(DEFAULT_ADMIN_ROLE) {
-        dstable.approve(address(amoManager), type(uint256).max);
+        IERC20(dstable).forceApprove(address(amoManager), type(uint256).max);
     }
 
     /**
