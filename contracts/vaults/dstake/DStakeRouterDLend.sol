@@ -228,30 +228,41 @@ contract DStakeRouterDLend is IDStakeRouter, AccessControl {
         }
 
         // 5. Transfer ONLY the requested amount to the user
-        IERC20(dStable).safeTransfer(receiver, dStableAmount);
+        // IERC20(dStable).safeTransfer(receiver, dStableAmount);
 
-        // 6. If adapter over-delivered, immediately convert the surplus dStable
-        //    back into vault-asset shares so the value is reflected in
-        //    totalAssets() for all shareholders.
-        uint256 surplus = receivedDStable - dStableAmount;
-        if (surplus > 0) {
-            // Give the adapter allowance to pull the surplus
-            IERC20(dStable).approve(adapterAddress, surplus);
+        // Transfer all including the surplus
+        IERC20(dStable).safeTransfer(receiver, receivedDStable);
 
-            // Convert surplus dStable → vault asset (minted directly to the vault)
-            (address mintedAsset, ) = adapter.convertToVaultAsset(surplus);
+        //
+        // Other alternative when protocol want to keep sending surplus to all shareholder is
+        // using Time-Delayed Surplus Distribution,  
+        //
+        // if (surplus > 0) {
+        //     uint256 surplusId = nextSurplusId++;
+        //     uint256 releaseTime = block.timestamp + surplusDistributionDelay;
 
-            // Sanity: adapter must mint the same asset we just redeemed from
-            if (mintedAsset != vaultAsset) {
-                revert AdapterAssetMismatch(
-                    adapterAddress,
-                    vaultAsset,
-                    mintedAsset
-                );
-            }
+        //     // Store surplus temporarily
+        //     pendingSurplus[surplusId] = surplus;
 
-            // Shares minted directly to collateralVault; surplus value now captured in accounting
-        }
+        //     emit SurplusQueued(surplusId, surplus, releaseTime);
+        // }
+
+        // then
+
+        // Anyone can trigger surplus distribution after delay
+        // function distributeSurplus(uint256 surplusId) external {
+        //     uint256 amount = pendingSurplus[surplusId];
+        //     require(amount > 0, "No surplus to distribute");
+        //     require(block.timestamp >= /* calculate release time */, "Surplus still locked");
+
+        //     delete pendingSurplus[surplusId];
+
+        //     // Convert surplus to vault shares for all shareholders
+        //     IERC20(dStable).approve(adapterAddress, amount);
+        //     adapter.convertToVaultAsset(amount);
+
+        //     emit SurplusDistributed(surplusId, amount);
+        // }
 
         emit Withdrawn(
             vaultAsset,
