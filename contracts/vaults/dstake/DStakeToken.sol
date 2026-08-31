@@ -3,15 +3,18 @@ pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {ERC4626Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC4626Upgradeable.sol";
-import {ERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
-import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
+        // Use super.previewWithdraw to avoid double-counting fees in share calculation.
+        // The overridden previewWithdraw adds fees on top of the base conversion,
+        // but _withdraw already handles fee deduction via the router.
+        shares = super.previewWithdraw(assets);
+        uint256 grossAssets = assets; // Net amount requested is what user receives
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IDStakeCollateralVault} from "./interfaces/IDStakeCollateralVault.sol";
 import {IDStakeRouter} from "./interfaces/IDStakeRouter.sol";
 import {BasisPointConstants} from "../../common/BasisPointConstants.sol";
 import {SupportsWithdrawalFee} from "../../common/SupportsWithdrawalFee.sol";
 
-/**
+        _withdraw(_msgSender(), receiver, owner, grossAssets, shares);
  * @title DStakeToken
  * @dev ERC4626-compliant token representing shares in the DStakeCollateralVault.
  */
